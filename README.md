@@ -2,6 +2,7 @@
 progetto 3 lettore RFID apri porta
 
 Ecco i componenti:
+
 Arduino Uno
 Lettore RFID-RC522
 Almeno 2 Tessere TAG
