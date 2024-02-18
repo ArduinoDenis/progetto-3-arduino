@@ -1,199 +1,100 @@
 /* 
-
-Con questo sketch è possibile fare accendere un led o commutare un relè 
-
-al passaggio di una tessera magnetica sul lettore RFID.
-
-Se la tessera viene riconosciuta si accende un led verde e commuta il relè,
-
-altrimenti un led rosso per indicarci l`inaccessibilità.  
-
- 
+With this sketch, you can turn on an LED or switch a relay when a magnetic card is passed over the RFID reader.
+If the card is recognized, a green LED lights up and the relay switches. Otherwise, a red LED indicates inaccessibility.
 
 PINOUT:
+RC522 Module   Uno/Nano
+SDA            D10
+SCK            D13
+MOSI           D11
+MISO           D12
+IRQ            N/A
+GND            GND
+RST            D9
+3.3V           3.3V
 
-  
-
-RC522 MODULO    Uno/Nano    
-
-SDA             D10
-
-SCK             D13
-
-MOSI            D11
-
-MISO            D12
-
-IRQ             N/A
-
-GND             GND
-
-RST             D9
-
-3.3V            3.3V
-
- 
-
-led verde al Pin 3
-
-Led rosso al Pin 4
-
-Relè al Pin 2
-
+Green LED at Pin 3
+Red LED at Pin 4
+Relay at Pin 2
 */
 
-  
-
 #include <SPI.h>
-
 #include <RFID.h>
 
-/* Vengono definiti PIN del RFID reader*/
-
-#define SDA_DIO 10  // Pin 53 per Arduino Mega
-
+/* Define PINs of the RFID reader */
+#define SDA_DIO 10  // Pin 53 for Arduino Mega
 #define RESET_DIO 9
-
-#define delayRead 1000 // Tempo 
-
-#define delayLed 2000 
+#define delayRead 1000 // Time delay for reading
+#define delayLed 2000 // Time delay for LED
 
 #define ledVerde 3
-
 #define ledRosso 4
-
 #define rele 2
 
-/* Viene creata una istanza della RFID libreria */
-
+/* Create an instance of the RFID library */
 RFID RC522(SDA_DIO, RESET_DIO); 
 
-  // inserire tutti i codici esadecimali delle schede magnetiche riconosciute 
+// Insert hexadecimal codes of recognized magnetic cards
+String authorizedCode1 = "FCA2333B56";
+String authorizedCode2 = "EXAMPLE479";
+String authorizedCode3 = "EXAMPLE480";
 
-String codiceAutorizzato1 = "FCA2333B56";
-
-String codiceAutorizzato2 = "ESEMPIO479";
-
-String codiceAutorizzato3 = "ESEMPIO480";
-
-  
-
-void setup()
-
-{ 
-
+void setup() { 
   Serial.begin(9600);
-
-  /* Abilita SPI*/
-
+  /* Enable SPI */
   SPI.begin(); 
-
-  /* Viene inizilizzato RFID reader */
-
+  /* Initialize RFID reader */
   RC522.init();
-
   Serial.println("Setup");
-
-  pinMode(ledVerde,OUTPUT);
-
-  pinMode(ledRosso,OUTPUT);
-
-  pinMode(rele,OUTPUT);
-
+  pinMode(ledVerde, OUTPUT);
+  pinMode(ledRosso, OUTPUT);
+  pinMode(rele, OUTPUT);
 }
 
-  
-
-void loop()
-
-{
-
+void loop() {
   /* Temporary loop counter */
-
   byte i;
-
-  // Se viene letta una tessera
-
-  if (RC522.isCard())
-
-  {
-
-    // Viene letto il suo codice 
-
-    RC522.readCardSerial();
-
-    String codiceLetto ="";
-
-    Serial.println("Codice delle tessera letto:");
-
   
-
-    // Viene caricato il codice della tessera, all'interno di una Stringa
-
-    for(i = 0; i <= 4; i++)
-
-    {
-
-      codiceLetto+= String (RC522.serNum[i],HEX);
-
-      codiceLetto.toUpperCase();
-
+  // If a card is detected
+  if (RC522.isCard()) {
+    // Read its code
+    RC522.readCardSerial();
+    String readCode = "";
+    Serial.println("Card Code Read:");
+  
+    // Load the card code into a String
+    for (i = 0; i <= 4; i++) {
+      readCode += String(RC522.serNum[i], HEX);
+      readCode.toUpperCase();
     }
-
-    Serial.println(codiceLetto);
-
-    if(verificaCodice(codiceLetto,codiceAutorizzato1)||verificaCodice(codiceLetto,codiceAutorizzato2)
-
-    ||verificaCodice(codiceLetto,codiceAutorizzato3)){
-
-      Serial.println("Tessera autorizzata");
-
-      accendiLed(ledVerde);
-
-      digitalWrite (rele, HIGH);
-
-      delay (1000);     // Tempo relè in stato ON
-
-      digitalWrite (rele, LOW);
-
-    }else{
-
-      Serial.println("Tessera non autorizzata");//codice della vostra tessera
-
-      accendiLed(ledRosso);
-
+    Serial.println(readCode);
+    
+    if (checkCode(readCode, authorizedCode1) || checkCode(readCode, authorizedCode2) || checkCode(readCode, authorizedCode3)) {
+      Serial.println("Authorized Card");
+      turnOnLed(ledVerde);
+      digitalWrite(rele, HIGH);
+      delay(1000); // Time relay is ON
+      digitalWrite(rele, LOW);
+    } else {
+      Serial.println("Unauthorized Card");
+      turnOnLed(ledRosso);
     }
-
-  delay(delayRead);  
-
+    delay(delayRead);  
   }
-
 }
 
-// Questa funzione verifica se il codice Letto è autorizzato
-
-boolean verificaCodice(String codiceLetto, String codiceAutorizzato){
-
-  if(codiceLetto.equals(codiceAutorizzato)){
-
+// This function checks if the read code is authorized
+boolean checkCode(String readCode, String authorizedCode) {
+  if (readCode.equals(authorizedCode)) {
     return true;
-
-  }else{
-
+  } else {
     return false;
-
   }  
-
 }    
 
-// Questa funzione permette di accendere un LED per un determinato periodo
-
-void accendiLed(int ledPin){
-
-  digitalWrite(ledPin,HIGH);
-
+// This function turns on an LED for a specified period
+void turnOnLed(int ledPin) {
+  digitalWrite(ledPin, HIGH);
   delay(delayLed);
-
-  digitalWrite(ledPin,LOW);
-
+  digitalWrite(ledPin, LOW);
 }
